@@ -1,6 +1,7 @@
 import axios from 'axios'
 
-const BASE = '/api/v1'
+const BACKEND = import.meta.env.VITE_BACKEND_URL || ''
+const BASE = `${BACKEND}/api/v1`
 
 export const createExperiment = (data) =>
   axios.post(`${BASE}/experiments`, data)

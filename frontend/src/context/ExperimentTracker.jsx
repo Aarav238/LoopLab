@@ -37,10 +37,15 @@ export function ExperimentTrackerProvider({ children }) {
       [experimentId]: { id: experimentId, goal, status: 'running', progress: 0 },
     }))
 
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-    const ws = new WebSocket(
-      `${protocol}//${window.location.host}/ws/experiments/${experimentId}/stream`
-    )
+    const backend = import.meta.env.VITE_BACKEND_URL
+    let wsUrl
+    if (backend) {
+      wsUrl = `${backend.replace(/^http/, 'ws')}/ws/experiments/${experimentId}/stream`
+    } else {
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+      wsUrl = `${protocol}//${window.location.host}/ws/experiments/${experimentId}/stream`
+    }
+    const ws = new WebSocket(wsUrl)
     wsRefs.current[experimentId] = ws
 
     ws.onmessage = (e) => {
