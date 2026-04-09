@@ -347,7 +347,7 @@ export default function Landing() {
                 </svg>
               }
               title="AI-Powered Suggestions"
-              desc="GPT-4o-mini analyzes your results and suggests the single most impactful parameter change. Scientific rationale included."
+              desc="An LLM agent analyzes your results and suggests the single most impactful parameter change. Scientific rationale included."
             />
             <FeatureCard
               delay={0.25}

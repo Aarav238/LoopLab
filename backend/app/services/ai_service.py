@@ -34,7 +34,7 @@ async def generate_suggestion(experiment: dict) -> AISuggestion:
         ])
 
         llm = ChatOpenAI(
-            model="gpt-4o-mini",
+            model="gpt-4.1",
             temperature=0.3,
             api_key=settings.OPENAI_API_KEY,
         )
