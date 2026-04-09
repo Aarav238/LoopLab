@@ -110,7 +110,7 @@ export default function Dashboard() {
       {/* Header */}
       <header className="relative border-b border-[var(--border)] px-8 py-5 scanline-overlay">
         <div className="max-w-5xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 cursor-pointer" onClick={() => navigate('/')}>
             {/* Logo mark */}
             <div className="relative w-9 h-9 flex items-center justify-center">
               <div className="absolute inset-0 rounded-lg bg-[var(--cyan)] opacity-10" />

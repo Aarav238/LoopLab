@@ -242,7 +242,7 @@ export default function ExperimentView() {
         },
       })
     )
-    navigate('/')
+    navigate('/dashboard')
   }
 
   return (
@@ -260,7 +260,7 @@ export default function ExperimentView() {
         <div className="max-w-4xl mx-auto px-8 py-5">
           <div className="flex items-center justify-between mb-3">
             <button
-              onClick={() => navigate('/')}
+              onClick={() => navigate('/dashboard')}
               className="font-mono-lab text-[11px] tracking-wider text-[var(--text-muted)] hover:text-[var(--cyan)] transition-colors cursor-pointer flex items-center gap-2"
             >
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
