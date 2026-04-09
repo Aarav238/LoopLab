@@ -1,4 +1,6 @@
-from pydantic import field_validator
+import json
+
+from pydantic import computed_field
 from pydantic_settings import BaseSettings
 
 
@@ -8,17 +10,15 @@ class Settings(BaseSettings):
     OPENAI_API_KEY: str = ""
     API_HOST: str = "0.0.0.0"
     API_PORT: int = 8000
-    CORS_ORIGINS: list[str] = ["http://localhost:5173"]
+    CORS_ORIGINS: str = "http://localhost:5173"
 
-    @field_validator("CORS_ORIGINS", mode="before")
-    @classmethod
-    def parse_cors(cls, v):
-        if isinstance(v, str):
-            if v.startswith("["):
-                import json
-                return json.loads(v)
-            return [origin.strip() for origin in v.split(",") if origin.strip()]
-        return v
+    @computed_field
+    @property
+    def cors_origins_list(self) -> list[str]:
+        v = self.CORS_ORIGINS
+        if v.startswith("["):
+            return json.loads(v)
+        return [origin.strip() for origin in v.split(",") if origin.strip()]
 
     class Config:
         env_file = ".env"
