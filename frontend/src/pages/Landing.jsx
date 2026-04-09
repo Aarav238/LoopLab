@@ -490,7 +490,7 @@ export default function Landing() {
               <div className="space-y-3">
                 <div className="px-4 py-3 rounded-xl border border-[var(--cyan-dim)] bg-[var(--cyan)]/5">
                   <p className="text-[var(--cyan)] font-semibold text-sm">React + Vite</p>
-                  <p className="text-[var(--text-muted)] text-[10px] mt-1">:5173</p>
+                  <p className="text-[var(--text-muted)] text-[10px] mt-1">Frontend</p>
                 </div>
                 <div className="flex justify-center gap-3 text-[var(--text-muted)]">
                   <span className="px-2 py-1 rounded bg-[var(--surface-2)] border border-[var(--border)]">axios</span>
@@ -502,7 +502,7 @@ export default function Landing() {
               <div className="space-y-3">
                 <div className="px-4 py-3 rounded-xl border border-emerald-500/20 bg-emerald-500/5">
                   <p className="text-emerald-400 font-semibold text-sm">FastAPI</p>
-                  <p className="text-[var(--text-muted)] text-[10px] mt-1">:8000</p>
+                  <p className="text-[var(--text-muted)] text-[10px] mt-1">Backend</p>
                 </div>
                 <div className="flex flex-col items-center gap-2 text-[var(--text-muted)]">
                   <span className="px-2 py-1 rounded bg-[var(--surface-2)] border border-[var(--border)]">BackgroundTasks</span>
@@ -514,7 +514,7 @@ export default function Landing() {
               <div className="space-y-3">
                 <div className="px-4 py-3 rounded-xl border border-amber-500/20 bg-amber-500/5">
                   <p className="text-amber-400 font-semibold text-sm">MongoDB + AI</p>
-                  <p className="text-[var(--text-muted)] text-[10px] mt-1">:27017</p>
+                  <p className="text-[var(--text-muted)] text-[10px] mt-1">Storage + AI</p>
                 </div>
                 <div className="flex justify-center gap-3 text-[var(--text-muted)]">
                   <span className="px-2 py-1 rounded bg-[var(--surface-2)] border border-[var(--border)]">Motor</span>
