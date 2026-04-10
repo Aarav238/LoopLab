@@ -16,33 +16,38 @@ This is the core workflow behind any materials informatics platform — paramete
 
 ## How It Works
 
-```
-React + Vite (port 5173)
-     |  axios                WebSocket
-     v                           ^
-FastAPI (port 8000)              |
-     |                     asyncio.Queue
-     v                           |
-BackgroundTask --> Step 1 --> Step 2 --> Step 3
-                                              |
-                                         AI Agent
-                                        (LangChain)
-                                              |
-                                         Suggestion
-     |
-  MongoDB (port 27017)
+```mermaid
+flowchart TD
+    A["Scientist defines goal + parameters"] -->|POST /api/v1/experiments| B["FastAPI Backend"]
+    B -->|BackgroundTask| C["Step 1: Parameter Validation"]
+    C -->|asyncio.Queue → WebSocket| F["Frontend streams live updates"]
+    C --> D["Step 2: Simulation"]
+    D -->|asyncio.Queue → WebSocket| F
+    D --> E["Step 3: Analysis"]
+    E -->|asyncio.Queue → WebSocket| F
+    E --> G["AI Agent (LangChain)"]
+    G -->|Structured suggestion| H["Suggestion displayed in UI"]
+    H -->|One-click pre-fill| A
+
+    B <-->|Motor async driver| I[("MongoDB")]
+
+    style A fill:#0c1018,stroke:#00f0ff,color:#f1f5f9
+    style B fill:#0c1018,stroke:#34d399,color:#f1f5f9
+    style C fill:#0c1018,stroke:#334155,color:#94a3b8
+    style D fill:#0c1018,stroke:#334155,color:#94a3b8
+    style E fill:#0c1018,stroke:#334155,color:#94a3b8
+    style F fill:#0c1018,stroke:#00f0ff,color:#00f0ff
+    style G fill:#0c1018,stroke:#fbbf24,color:#fbbf24
+    style H fill:#0c1018,stroke:#34d399,color:#34d399
+    style I fill:#0c1018,stroke:#334155,color:#94a3b8
 ```
 
 ### The Loop
 
-1. **Scientist fills a form** — defines a materials goal (e.g. "Maximize thermal conductivity for EV battery polymer"), input parameters (temperature, pressure, concentration), and constraints (cost limits, safety requirements).
-
+1. **Scientist fills a form** — defines a materials goal, input parameters (temperature, pressure, concentration), and constraints (cost limits, safety requirements).
 2. **Backend kicks off a 3-step async pipeline** — the API returns immediately and fires the pipeline as a background task. No blocking, no polling.
-
 3. **Frontend streams each step live via WebSocket** — the dashboard updates in real time as each step starts, runs, and completes. No page refresh needed.
-
 4. **AI agent suggests the next best parameter change** — after the pipeline finishes, a LangChain agent analyzes the results and returns a structured suggestion: which parameter to change, by how much, expected improvement, and scientific rationale.
-
 5. **Scientist clicks "Run next iteration"** — the modal pre-fills with the AI's suggested parameters. Tweak if needed, hit start, and the loop begins again.
 
 ---
@@ -365,6 +370,10 @@ Click **RUN NEXT ITERATION** at the bottom of the suggestion card. This takes yo
 ---
 
 ## Testing It End-to-End
+
+### Test Cases
+
+We provide a set of realistic materials science experiment inputs in **[test-cases.md](./test-cases.md)**. These cover diverse scenarios — EV battery polymers, high-temperature edge cases, multi-parameter sweeps, and more. Copy-paste them into the "New Run" modal to exercise different pipeline behaviors (validation warnings, varied candidate outputs, etc.).
 
 ### Quick Smoke Test (no OpenAI key needed)
 
