@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
 from app.database import connect_db, close_db
-from app.routers import experiments, ws
+from app.routers import experiments, health, ws
 
 
 @asynccontextmanager
@@ -30,5 +30,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(health.router)
 app.include_router(experiments.router)
 app.include_router(ws.router)
