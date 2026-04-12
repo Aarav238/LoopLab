@@ -31,20 +31,29 @@ function experimentToCSV(experiment) {
   const simStep = experiment.steps?.find((s) => s.step_name === 'Simulation')
   if (simStep?.output?.candidates) {
     lines.push('# Simulation Candidates')
-    lines.push('ID,Thermal Conductivity (W/mK),Stability Score,Cost ($/kg)')
+    lines.push('ID,Name,Formula,Category,Thermal Conductivity (W/mK),Density (g/cm3),Stability Score,Cost ($/kg),Match Score')
     simStep.output.candidates.forEach((c) => {
-      lines.push(`${c.id},${c.thermal_conductivity},${c.stability_score},${c.cost_per_kg}`)
+      lines.push(`${c.id},"${c.name || ''}",${c.formula || ''},${c.category || ''},${c.thermal_conductivity},${c.density || ''},${c.stability_score},${c.cost_per_kg},${c.match_score || ''}`)
     })
     lines.push('')
   }
 
   // Final result
-  if (experiment.final_result && Object.keys(experiment.final_result).length > 0) {
+  const fr = experiment.final_result
+  if (fr && Object.keys(fr).length > 0) {
     lines.push('# Analysis Result')
     lines.push('Metric,Value')
-    lines.push(`Best Candidate,${experiment.final_result.best_candidate}`)
-    lines.push(`Thermal Conductivity,${experiment.final_result.best_thermal_conductivity} W/mK`)
-    lines.push(`Improvement Over Baseline,+${experiment.final_result.improvement_over_baseline_pct}%`)
+    lines.push(`Best Candidate,${fr.best_candidate}`)
+    if (fr.best_name) lines.push(`Name,"${fr.best_name}"`)
+    if (fr.best_formula) lines.push(`Formula,${fr.best_formula}`)
+    if (fr.best_category) lines.push(`Category,${fr.best_category}`)
+    lines.push(`Thermal Conductivity,${fr.best_thermal_conductivity} W/mK`)
+    if (fr.best_density) lines.push(`Density,${fr.best_density} g/cm3`)
+    if (fr.best_melting_point) lines.push(`Melting Point,${fr.best_melting_point} C`)
+    if (fr.best_stability_score) lines.push(`Stability Score,${fr.best_stability_score}`)
+    if (fr.best_cost_per_kg) lines.push(`Cost,${fr.best_cost_per_kg} $/kg`)
+    if (fr.match_score_pct) lines.push(`Match Score,${fr.match_score_pct}%`)
+    if (fr.runner_up) lines.push(`Runner-up,"${fr.runner_up}"`)
     lines.push('')
   }
 

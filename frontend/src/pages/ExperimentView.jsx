@@ -123,47 +123,99 @@ function StepCard({ name, stepData, index }) {
           {isCompleted && Object.keys(output).length > 0 && (
             <div className="mt-3 animate-fade-in">
               {name === 'Parameter Validation' && (
-                <div className="flex items-center gap-2 text-xs">
-                  <span className={`font-mono-lab px-1.5 py-0.5 rounded ${
-                    output.valid ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'
-                  }`}>
-                    {output.valid ? 'VALID' : 'INVALID'}
-                  </span>
-                  {output.warnings?.length > 0 && (
-                    <span className="text-amber-400 font-mono-lab text-[11px]">
-                      {output.warnings.join(', ')}
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-xs">
+                    <span className={`font-mono-lab px-1.5 py-0.5 rounded ${
+                      output.valid ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'
+                    }`}>
+                      {output.valid ? 'VALID' : 'INVALID'}
                     </span>
-                  )}
-                  {output.warnings?.length === 0 && (
-                    <span className="text-[var(--text-muted)] font-mono-lab text-[11px]">no warnings</span>
+                    {output.warnings?.length > 0 && (
+                      <span className="text-amber-400 font-mono-lab text-[11px]">
+                        {output.warnings.join(', ')}
+                      </span>
+                    )}
+                    {output.warnings?.length === 0 && (
+                      <span className="text-[var(--text-muted)] font-mono-lab text-[11px]">no warnings</span>
+                    )}
+                  </div>
+                  {output.parsed_query && (
+                    <div className="flex flex-wrap gap-1.5">
+                      {output.parsed_query.target_properties?.map((t, i) => (
+                        <span key={i} className="font-mono-lab text-[10px] px-1.5 py-0.5 rounded bg-[var(--surface-2)] border border-[var(--border)] text-[var(--cyan)]">
+                          {t.property}: {t.direction}{t.target != null ? ` ${t.target}` : ''}
+                        </span>
+                      ))}
+                      {output.parsed_query.categories?.length > 0 && (
+                        <span className="font-mono-lab text-[10px] px-1.5 py-0.5 rounded bg-amber-500/10 border border-amber-500/20 text-amber-400">
+                          {output.parsed_query.categories.join(', ')}
+                        </span>
+                      )}
+                      {output.parsed_query.application_keywords?.length > 0 && (
+                        <span className="font-mono-lab text-[10px] px-1.5 py-0.5 rounded bg-purple-500/10 border border-purple-500/20 text-purple-400">
+                          {output.parsed_query.application_keywords.join(', ')}
+                        </span>
+                      )}
+                    </div>
                   )}
                 </div>
               )}
 
               {name === 'Simulation' && output.candidates && (
-                <div className="space-y-1.5">
-                  {output.candidates.map((c) => (
-                    <div key={c.id} className="flex items-center gap-3 font-mono-lab text-[11px]">
-                      <span className="text-[var(--text-secondary)] font-semibold w-16">{c.id}</span>
-                      <span className="text-[var(--cyan)]">{c.thermal_conductivity} W/mK</span>
-                      <span className="text-[var(--text-muted)]">stability: {c.stability_score}</span>
-                      <span className="text-[var(--text-muted)]">${c.cost_per_kg}/kg</span>
+                <div className="space-y-2">
+                  {output.candidates.map((c, idx) => (
+                    <div key={c.id} className={`flex items-center gap-3 font-mono-lab text-[11px] p-2 rounded-lg ${
+                      idx === 0 ? 'bg-emerald-500/5 border border-emerald-500/10' : ''
+                    }`}>
+                      <span className="text-[var(--text-secondary)] font-semibold w-14 shrink-0">{c.id}</span>
+                      <span className="text-[var(--text-primary)] min-w-0 truncate flex-1" title={c.name}>
+                        {c.name || c.formula}
+                      </span>
+                      <span className="text-[var(--cyan)] shrink-0">{c.thermal_conductivity} W/mK</span>
+                      <span className="text-[var(--text-muted)] shrink-0">${c.cost_per_kg}/kg</span>
+                      <span className={`shrink-0 px-1.5 py-0.5 rounded text-[10px] font-semibold ${
+                        c.match_score >= 0.8 ? 'bg-emerald-500/10 text-emerald-400' :
+                        c.match_score >= 0.5 ? 'bg-amber-500/10 text-amber-400' :
+                        'bg-slate-500/10 text-slate-400'
+                      }`}>
+                        {(c.match_score * 100).toFixed(0)}%
+                      </span>
                     </div>
                   ))}
+                  {output.total_searched && (
+                    <p className="font-mono-lab text-[10px] text-[var(--text-muted)]">
+                      Searched {output.total_searched} materials
+                      {output.filters_applied?.categories?.[0] !== 'all' && (
+                        <> in {output.filters_applied.categories.join(', ')}</>
+                      )}
+                    </p>
+                  )}
                 </div>
               )}
 
               {name === 'Analysis' && (
-                <div className="flex flex-wrap items-center gap-3 font-mono-lab text-[11px]">
-                  <span className="px-2 py-1 rounded-lg bg-emerald-500/10 text-emerald-400 font-semibold">
-                    {output.best_candidate}
-                  </span>
-                  <span className="text-[var(--cyan)]">
-                    {output.best_thermal_conductivity} W/mK
-                  </span>
-                  <span className="text-emerald-400">
-                    +{output.improvement_over_baseline_pct}%
-                  </span>
+                <div className="space-y-2">
+                  <div className="flex flex-wrap items-center gap-3 font-mono-lab text-[11px]">
+                    <span className="px-2 py-1 rounded-lg bg-emerald-500/10 text-emerald-400 font-semibold">
+                      {output.best_name || output.best_candidate}
+                    </span>
+                    {output.best_formula && (
+                      <span className="text-[var(--text-secondary)]">{output.best_formula}</span>
+                    )}
+                    {output.best_category && (
+                      <span className="px-1.5 py-0.5 rounded bg-[var(--surface-2)] text-[var(--text-muted)]">
+                        {output.best_category}
+                      </span>
+                    )}
+                    <span className="text-[var(--cyan)]">
+                      match: {output.match_score_pct}%
+                    </span>
+                  </div>
+                  {output.runner_up && (
+                    <p className="font-mono-lab text-[10px] text-[var(--text-muted)]">
+                      Runner-up: {output.runner_up}
+                    </p>
+                  )}
                 </div>
               )}
             </div>
@@ -387,33 +439,81 @@ export default function ExperimentView() {
             </div>
 
             <div className="glow-border-emerald bg-[var(--surface-1)] border rounded-xl p-6">
-              {/* Key metrics */}
-              <div className="grid grid-cols-3 gap-4 mb-4">
-                <div className="text-center">
-                  <p className="font-mono-lab text-[10px] tracking-wider text-[var(--text-muted)] uppercase mb-1">
-                    Best Candidate
+              {/* Material name header */}
+              {finalResult.best_name && (
+                <div className="mb-4 pb-3 border-b border-[var(--border)]">
+                  <p className="font-mono-lab text-lg font-bold text-emerald-400">
+                    {finalResult.best_name}
                   </p>
-                  <p className="font-mono-lab text-xl font-bold text-emerald-400">
-                    {finalResult.best_candidate}
-                  </p>
+                  <div className="flex items-center gap-3 mt-1">
+                    {finalResult.best_formula && (
+                      <span className="font-mono-lab text-xs text-[var(--text-secondary)]">{finalResult.best_formula}</span>
+                    )}
+                    {finalResult.best_category && (
+                      <span className="font-mono-lab text-[10px] px-1.5 py-0.5 rounded bg-[var(--surface-2)] text-[var(--text-muted)] uppercase tracking-wider">
+                        {finalResult.best_category}
+                      </span>
+                    )}
+                    <span className="font-mono-lab text-[10px] text-[var(--text-muted)]">{finalResult.best_candidate}</span>
+                  </div>
                 </div>
-                <div className="text-center border-x border-[var(--border)]">
+              )}
+
+              {/* Key metrics */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
+                <div className="text-center">
                   <p className="font-mono-lab text-[10px] tracking-wider text-[var(--text-muted)] uppercase mb-1">
                     Conductivity
                   </p>
-                  <p className="font-mono-lab text-xl font-bold text-[var(--cyan)]">
+                  <p className="font-mono-lab text-lg font-bold text-[var(--cyan)]">
                     {finalResult.best_thermal_conductivity}
-                    <span className="text-xs font-normal text-[var(--text-muted)] ml-1">W/mK</span>
+                    <span className="text-[10px] font-normal text-[var(--text-muted)] ml-1">W/mK</span>
                   </p>
                 </div>
                 <div className="text-center">
                   <p className="font-mono-lab text-[10px] tracking-wider text-[var(--text-muted)] uppercase mb-1">
-                    Improvement
+                    Density
                   </p>
-                  <p className="font-mono-lab text-xl font-bold text-emerald-400">
-                    +{finalResult.improvement_over_baseline_pct}%
+                  <p className="font-mono-lab text-lg font-bold text-[var(--text-primary)]">
+                    {finalResult.best_density}
+                    <span className="text-[10px] font-normal text-[var(--text-muted)] ml-1">g/cm³</span>
                   </p>
                 </div>
+                <div className="text-center">
+                  <p className="font-mono-lab text-[10px] tracking-wider text-[var(--text-muted)] uppercase mb-1">
+                    Stability
+                  </p>
+                  <p className="font-mono-lab text-lg font-bold text-emerald-400">
+                    {finalResult.best_stability_score ? (finalResult.best_stability_score * 100).toFixed(0) : '--'}%
+                  </p>
+                </div>
+                <div className="text-center">
+                  <p className="font-mono-lab text-[10px] tracking-wider text-[var(--text-muted)] uppercase mb-1">
+                    Match Score
+                  </p>
+                  <p className="font-mono-lab text-lg font-bold text-[var(--cyan)]">
+                    {finalResult.match_score_pct}%
+                  </p>
+                </div>
+              </div>
+
+              {/* Additional properties */}
+              <div className="flex flex-wrap gap-3 mb-4 font-mono-lab text-[11px]">
+                {finalResult.best_melting_point && (
+                  <span className="px-2 py-1 rounded bg-[var(--surface-2)] text-[var(--text-secondary)]">
+                    Melting: {finalResult.best_melting_point}°C
+                  </span>
+                )}
+                {finalResult.best_cost_per_kg && (
+                  <span className="px-2 py-1 rounded bg-[var(--surface-2)] text-[var(--text-secondary)]">
+                    Cost: ${finalResult.best_cost_per_kg}/kg
+                  </span>
+                )}
+                {finalResult.runner_up && (
+                  <span className="px-2 py-1 rounded bg-[var(--surface-2)] text-[var(--text-muted)]">
+                    Runner-up: {finalResult.runner_up}
+                  </span>
+                )}
               </div>
 
               {finalResult.recommendation && (

@@ -1,10 +1,11 @@
 import asyncio
-import random
 import time
 from datetime import datetime
 
 from app.database import get_db
 from app.services.ai_service import generate_suggestion
+from app.services.query_parser import parse_query
+from app.services.material_search import search_materials
 from app.utils import events
 
 
@@ -23,14 +24,16 @@ async def run_pipeline(experiment_id: str):
     if not doc:
         return
 
+    goal = doc["goal"]
     parameters = doc["parameters"]
+    constraints = doc.get("constraints", [])
 
     try:
         await db.experiments.update_one(
             {"id": experiment_id}, {"$set": {"status": "running"}}
         )
 
-        # --- Step 1: Parameter Validation (1.5s) ---
+        # --- Step 1: Parameter Validation & Query Parsing ---
         await _update_step(experiment_id, 0, {"status": "running"})
         await events.publish(experiment_id, {
             "event": "step_started",
@@ -42,17 +45,38 @@ async def run_pipeline(experiment_id: str):
         })
 
         start = time.monotonic()
-        await asyncio.sleep(1.5)
+
+        # Use LLM to parse the natural language goal into structured search criteria
+        parsed_query = await parse_query(goal, parameters, constraints)
+
         duration_ms = int((time.monotonic() - start) * 1000)
 
         temp = parameters.get("temperature", 0)
         warnings = (
             ["Temperature near upper bound of safe range"] if temp > 250 else []
         )
+
+        parsed_summary = {
+            "target_properties": [
+                {
+                    "property": t.property_name,
+                    "target": t.target_value,
+                    "direction": t.direction,
+                    "weight": t.weight,
+                }
+                for t in parsed_query.target_properties
+            ],
+            "categories": parsed_query.material_categories,
+            "application_keywords": parsed_query.application_keywords,
+            "exclude_toxic": parsed_query.exclude_toxic,
+            "max_cost_per_kg": parsed_query.max_cost_per_kg,
+        }
+
         step1_output = {
             "valid": True,
             "warnings": warnings,
             "validated_params": parameters,
+            "parsed_query": parsed_summary,
         }
 
         await _update_step(experiment_id, 0, {
@@ -69,7 +93,7 @@ async def run_pipeline(experiment_id: str):
             "timestamp": datetime.utcnow().isoformat(),
         })
 
-        # --- Step 2: Simulation (3s) ---
+        # --- Step 2: Simulation (Material Database Search) ---
         await _update_step(experiment_id, 1, {"status": "running"})
         await events.publish(experiment_id, {
             "event": "step_started",
@@ -81,18 +105,41 @@ async def run_pipeline(experiment_id: str):
         })
 
         start = time.monotonic()
-        await asyncio.sleep(3)
+
+        # Search real materials database with parsed criteria
+        # Small delay so the UI feels responsive (actual search is fast)
+        await asyncio.sleep(1.5)
+        top_candidates = search_materials(parsed_query, top_n=5)
+
         duration_ms = int((time.monotonic() - start) * 1000)
 
+        # Format candidates for output
         candidates = []
-        for i in range(1, 4):
+        for mat in top_candidates:
             candidates.append({
-                "id": f"MAT-{i:03d}",
-                "thermal_conductivity": round(random.uniform(0.8, 3.2), 2),
-                "stability_score": round(random.uniform(0.55, 0.98), 2),
-                "cost_per_kg": round(random.uniform(25, 110), 1),
+                "id": mat["id"],
+                "name": mat["name"],
+                "formula": mat["formula"],
+                "category": mat["category"],
+                "thermal_conductivity": mat["thermal_conductivity"],
+                "density": mat["density"],
+                "melting_point": mat["melting_point"],
+                "stability_score": mat["stability_score"],
+                "cost_per_kg": mat["cost_per_kg"],
+                "applications": mat["applications"],
+                "match_score": mat["match_score"],
+                "toxic": mat.get("toxic", False),
             })
-        step2_output = {"candidates": candidates}
+
+        step2_output = {
+            "candidates": candidates,
+            "total_searched": 85,
+            "filters_applied": {
+                "categories": parsed_query.material_categories or ["all"],
+                "exclude_toxic": parsed_query.exclude_toxic,
+                "max_cost": parsed_query.max_cost_per_kg,
+            },
+        }
 
         await _update_step(experiment_id, 1, {
             "status": "completed",
@@ -108,7 +155,7 @@ async def run_pipeline(experiment_id: str):
             "timestamp": datetime.utcnow().isoformat(),
         })
 
-        # --- Step 3: Analysis (1s) ---
+        # --- Step 3: Analysis ---
         await _update_step(experiment_id, 2, {"status": "running"})
         await events.publish(experiment_id, {
             "event": "step_started",
@@ -120,19 +167,38 @@ async def run_pipeline(experiment_id: str):
         })
 
         start = time.monotonic()
-        await asyncio.sleep(1)
+        await asyncio.sleep(0.5)
         duration_ms = int((time.monotonic() - start) * 1000)
 
-        best = max(candidates, key=lambda c: c["thermal_conductivity"])
-        step3_output = {
-            "best_candidate": best["id"],
-            "best_thermal_conductivity": best["thermal_conductivity"],
-            "improvement_over_baseline_pct": round(random.uniform(8, 34), 1),
-            "recommendation": (
-                f"{best['id']} shows promising conductivity with "
-                "acceptable stability for EV battery applications."
-            ),
-        }
+        # Best candidate is the one with the highest match score (already sorted)
+        best = candidates[0] if candidates else None
+
+        if best:
+            # Build a contextual recommendation
+            recommendation = _build_recommendation(best, parsed_query)
+
+            step3_output = {
+                "best_candidate": best["id"],
+                "best_name": best["name"],
+                "best_formula": best["formula"],
+                "best_category": best["category"],
+                "best_thermal_conductivity": best["thermal_conductivity"],
+                "best_density": best["density"],
+                "best_melting_point": best["melting_point"],
+                "best_stability_score": best["stability_score"],
+                "best_cost_per_kg": best["cost_per_kg"],
+                "match_score_pct": round(best["match_score"] * 100, 1),
+                "recommendation": recommendation,
+                "runner_up": candidates[1]["name"] if len(candidates) > 1 else None,
+                "runner_up_id": candidates[1]["id"] if len(candidates) > 1 else None,
+            }
+        else:
+            step3_output = {
+                "best_candidate": None,
+                "match_score_pct": 0,
+                "recommendation": "No materials found matching the given criteria. "
+                "Try relaxing constraints or broadening the search.",
+            }
 
         await _update_step(experiment_id, 2, {
             "status": "completed",
@@ -197,3 +263,50 @@ async def run_pipeline(experiment_id: str):
             "data": {"error": str(e)},
             "timestamp": datetime.utcnow().isoformat(),
         })
+
+
+def _build_recommendation(best: dict, parsed_query) -> str:
+    """Build a contextual recommendation string based on the best match and query."""
+    parts = [f"{best['name']} ({best['formula']})"]
+
+    # Mention how it matches the primary target
+    if parsed_query.target_properties:
+        primary = parsed_query.target_properties[0]
+        prop_name = primary.property_name.replace("_", " ")
+        actual = best.get(primary.property_name)
+        if actual is not None:
+            if primary.direction == "closest" and primary.target_value is not None:
+                diff_pct = abs(actual - primary.target_value) / primary.target_value * 100 if primary.target_value else 0
+                if diff_pct < 5:
+                    parts.append(f"closely matches the target {prop_name} of {primary.target_value}")
+                elif diff_pct < 20:
+                    parts.append(f"is near the target {prop_name} ({actual} vs {primary.target_value} requested)")
+                else:
+                    parts.append(f"is the closest available match for {prop_name} ({actual})")
+            elif primary.direction in ("above", "maximize"):
+                parts.append(f"meets the {prop_name} requirement with {actual}")
+            elif primary.direction in ("below", "minimize"):
+                parts.append(f"satisfies the low {prop_name} requirement at {actual}")
+
+    # Mention category relevance
+    if parsed_query.material_categories:
+        parts.append(f"classified as {best['category']}")
+
+    # Mention application relevance
+    if parsed_query.application_keywords:
+        mat_apps = " ".join(best.get("applications", [])).lower()
+        matched_apps = [
+            kw for kw in parsed_query.application_keywords
+            if kw.lower() in mat_apps
+        ]
+        if matched_apps:
+            parts.append(f"with known applications in {', '.join(matched_apps)}")
+
+    # Stability note
+    stability = best.get("stability_score", 0)
+    if stability >= 0.9:
+        parts.append("and has excellent stability")
+    elif stability >= 0.8:
+        parts.append("and has good stability")
+
+    return " ".join(parts) + "."

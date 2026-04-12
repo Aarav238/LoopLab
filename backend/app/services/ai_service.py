@@ -16,9 +16,15 @@ async def generate_suggestion(experiment: dict) -> AISuggestion:
             (
                 "system",
                 "You are an AI materials scientist assistant. "
-                "Given an experiment result, suggest the single most impactful "
-                "parameter adjustment for the next iteration. "
-                "Think step by step. Be specific and scientific. "
+                "Given a materials discovery experiment result with real material candidates "
+                "from a database of 85 materials, suggest how the user could refine their "
+                "search in the next iteration to get better results.\n\n"
+                "Consider:\n"
+                "- Whether the best candidate closely matches the user's goal\n"
+                "- Whether adjusting search parameters could find better candidates\n"
+                "- Trade-offs between properties (e.g., cost vs performance)\n"
+                "- Alternative material categories that might work\n\n"
+                "Be specific and scientific. Reference actual material properties.\n"
                 "Always return valid JSON matching the schema exactly.\n\n"
                 "{format_instructions}",
             ),
@@ -27,9 +33,9 @@ async def generate_suggestion(experiment: dict) -> AISuggestion:
                 "Goal: {goal}\n\n"
                 "Parameters used: {parameters}\n\n"
                 "Constraints: {constraints}\n\n"
-                "Simulation results: {simulation_results}\n\n"
-                "Analysis result: {analysis_result}\n\n"
-                "Provide your suggestion for the next iteration.",
+                "Top candidates found: {simulation_results}\n\n"
+                "Best match analysis: {analysis_result}\n\n"
+                "Provide your suggestion for refining the search in the next iteration.",
             ),
         ])
 
