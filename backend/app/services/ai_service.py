@@ -1,6 +1,9 @@
 import json
+import logging
 
 from langchain_openai import ChatOpenAI
+
+logger = logging.getLogger(__name__)
 from langchain_core.output_parsers import PydanticOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 
@@ -62,7 +65,8 @@ async def generate_suggestion(experiment: dict) -> AISuggestion:
 
         return result
 
-    except Exception:
+    except Exception as e:
+        logger.exception("AI suggestion failed: %s", e)
         params = experiment.get("parameters", {})
         fallback_changes = []
         for name, value in params.items():
