@@ -33,7 +33,12 @@ export default function Dashboard() {
   const fetchExperiments = useCallback(async () => {
     try {
       const res = await getExperiments()
-      setExperiments(res.data)
+      const data = res.data
+      // Proxy/network errors may return { error: "..." } instead of a list
+      setExperiments(Array.isArray(data) ? data : [])
+      if (!Array.isArray(data)) {
+        console.warn('getExperiments: expected an array', data)
+      }
     } catch (err) {
       console.error('Failed to fetch experiments', err)
     }
