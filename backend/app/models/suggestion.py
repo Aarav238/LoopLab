@@ -1,12 +1,12 @@
-from typing import Literal
+from typing import Literal, Union
 
 from pydantic import BaseModel
 
 
 class ParameterChange(BaseModel):
     name: str
-    current_value: float
-    suggested_value: float
+    current_value: Union[float, str, None] = None
+    suggested_value: Union[float, str, None] = None
     change_direction: Literal["increase", "decrease", "maintain"]
     expected_impact: str
 
