@@ -14,10 +14,12 @@ export function useExperimentStream(experimentId) {
 
     terminalRef.current = false
 
-    const backend = import.meta.env.VITE_BACKEND_URL
+    // REST can use Vercel proxy (same origin); WebSockets must hit the real backend (e.g. ngrok wss).
+    const wsBackend =
+      import.meta.env.VITE_WS_URL || import.meta.env.VITE_BACKEND_URL
     let wsUrl
-    if (backend) {
-      wsUrl = `${backend.replace(/^http/, 'ws')}/ws/experiments/${experimentId}/stream`
+    if (wsBackend) {
+      wsUrl = `${wsBackend.replace(/^http/, 'ws')}/ws/experiments/${experimentId}/stream`
     } else {
       const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
       wsUrl = `${protocol}//${window.location.host}/ws/experiments/${experimentId}/stream`

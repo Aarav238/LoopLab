@@ -1,14 +1,11 @@
 import axios from 'axios'
 
+// Production (Vercel): leave VITE_BACKEND_URL unset → same-origin /api → serverless proxy (no CORS).
+// Local dev: VITE_BACKEND_URL=http://localhost:8000
 const BACKEND = import.meta.env.VITE_BACKEND_URL || ''
-const BASE = `${BACKEND}/api/v1`
+const BASE = BACKEND ? `${BACKEND}/api/v1` : '/api/v1'
 
-// ngrok free tier returns an interstitial HTML page without CORS headers unless this header is set.
-const api = axios.create(
-  BACKEND.includes('ngrok')
-    ? { headers: { 'ngrok-skip-browser-warning': 'true' } }
-    : {}
-)
+const api = axios.create()
 
 export const createExperiment = (data) =>
   api.post(`${BASE}/experiments`, data)
