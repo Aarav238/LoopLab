@@ -1,7 +1,6 @@
 /**
  * Proxies /api/* to BACKEND_URL (e.g. ngrok) from the server.
  * Browser → same-origin /api → no CORS. Ngrok skip header is added server-side.
- * (Duplicate of /api/[...path].js at repo root — keep in sync if you change one.)
  */
 export default async function handler(req, res) {
   const backend = process.env.BACKEND_URL
